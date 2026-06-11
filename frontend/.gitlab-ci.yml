@@ -1,0 +1,74 @@
+stages:
+  - test
+  - build
+  - prepare
+  - deploy
+
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PIP_INDEX_URL: http://192.168.78.2:5000/index/
+  PIP_TRUSTED_HOST: 192.168.78.2
+
+# Pip's cache doesn't store the python packages
+# https://pip.pypa.io/en/stable/reference/pip_install/#caching
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .cache/pip
+    - .npm/
+
+lint:
+  image: registry.cs.petrsu.ru/dockerhub/node:latest
+  only:
+    - master
+    - merge_requests
+  stage: test
+  script:
+    # configure caching packages
+    - echo 'Acquire::HTTP::Proxy "http://192.168.78.2:3142";' >> /etc/apt/apt.conf.d/01proxy && echo 'Acquire::HTTPS::Proxy "false";' >> /etc/apt/apt.conf.d/01proxy
+    - npm ci --cache .npm --prefer-offline
+    - '( apt-get update -y && apt-get install python3-pip python3-venv -y)'
+    - python3 -V # print python version for debugging
+    - python3 -m venv .venv
+    - source .venv/bin/activate
+    - pip install --upgrade pip
+    - pip install pylint-gitlab anybadge
+    - npm install
+    - mkdir ./jslint
+    - npm run gitlab-lint | tee ./jslint/jslint.log
+    - JSLINT_SCORE=$(sed -n 's/^.*✖.* \([0-9]*\) problems.*/\1/p' ./jslint/jslint.log)
+    - python3 -m anybadge --label=JSlint --file=./jslint/jslint.svg --value=$JSLINT_SCORE 10=green 40=yellow 80=orange 100=red
+    - echo "JSlint score is $JSLINT_SCORE"
+  artifacts:
+    paths:
+      - ./jslint/
+    reports:
+      codequality: gl-codequality.json
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+
+build_binary:
+  # сборка скомпилированной версии фронта
+  stage: build
+  image: registry.cs.petrsu.ru/dockerhub/node:latest
+  only:
+    - master
+    - merge_requests
+  variables:
+    NODE_OPTIONS: --openssl-legacy-provider
+  script:
+    - npm install
+    - npx browserslist@latest --update-db
+    - npm run build
+  artifacts:
+    when: on_success
+    paths:
+      - dist

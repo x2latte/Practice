@@ -1,0 +1,94 @@
+<script setup lang="ts">
+
+  import { onMounted, ref } from 'vue'
+  import { useRoute } from 'vue-router'
+  import EditLine from '@/components/project/EditLine.vue'
+  import EditTextArea from '@/components/project/EditTextArea.vue'
+  import { useProjectDataStore } from '@/stores/project_data.ts'
+
+  const route = useRoute()
+  const projectGuid = route.params.projectGuid as string
+
+  const store = useProjectDataStore(projectGuid)()
+
+  // флаги переключения свойств в режим редактирования
+  const isEditCustomer = ref(false)
+  const isEditAbstract = ref(false)
+
+  /**
+   * Переключение свойства в режим редактирования
+   */
+  function edit (item: string) {
+    switch (item) {
+      case 'customer': {
+        isEditCustomer.value = !isEditCustomer.value
+        break
+      }
+      case 'abstract': {
+        isEditAbstract.value = !isEditAbstract.value
+        break
+      }
+      default: {
+        alert('Незивестное свойство: ' + item)
+      }
+    }
+  }
+
+  function saveValue (propName: string, propValue: string) {
+    switch (propName) {
+      case 'customer': {
+        store.updateVal('customer', propValue)
+        isEditCustomer.value = false
+        break
+      }
+      case 'abstract': {
+        store.updateVal('abstract', propValue)
+        isEditAbstract.value = false
+        break
+      }
+      default: {
+        alert('saveValue(): Неизвестное свойство: ' + propName)
+        console.log(propName, propValue)
+      }
+    }
+  }
+
+  onMounted(() => {
+    if (!store.isLoaded) {
+      store.loadData()
+    }
+  })
+</script>
+
+<template>
+  <v-toolbar extended>
+    <v-toolbar-title>{{ store.data?.name }}</v-toolbar-title>
+    <template #extension>
+      <h1 class="ml-5 mt-1">Описание проекта</h1>
+    </template>
+  </v-toolbar>
+  <v-card class="ma-2" title="Заказчик">
+    <template v-if="!isEditCustomer" #append><v-icon-btn icon="mdi-square-edit-outline" @click="edit('customer')" /></template>
+    <v-card-text><EditLine
+      :editing="isEditCustomer"
+      :text="store.data!.customer"
+      @cancel:text="isEditCustomer=false"
+      @update:text="(value) => saveValue('customer', value)"
+    /></v-card-text>
+  </v-card>
+  <v-card class="ma-2" title="Аннотация">
+    <template v-if="!isEditAbstract" #append><v-icon-btn icon="mdi-square-edit-outline" @click="edit('abstract')" /></template>
+    <v-card-text>
+      <EditTextArea
+        :editing="isEditAbstract"
+        :text="store.data!.abstract"
+        @cancel:text="isEditAbstract=false"
+        @update:text="(value) => saveValue('abstract', value)"
+      /></v-card-text>
+  </v-card>
+  <BusinessGoals :project-guid="projectGuid" />
+</template>
+
+<style scoped>
+
+</style>
