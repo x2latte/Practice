@@ -27,6 +27,18 @@ class User(Base):
     project_memberships = relationship("ProjectUser", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens      = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
+    @property
+    def is_admin(self) -> bool:
+        return self.role == UserRole.admin or getattr(self.role, "value", None) == "admin"
+
+    @property
+    def name(self) -> str:
+        return self.username
+
+    @property
+    def login(self) -> str:
+        return self.username
+
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"

@@ -23,11 +23,7 @@ class Client {
       const token = store.accessToken
       const token_type = store.tokenType
       if (token) {
-    const publicEndpoints = ["/login", "/register", "/forgot-password", "/reset-password"];
-    const isPublic = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
-    if (!isPublic) {
         config.headers.Authorization = `${token_type} ${token}`
-    }
       }
       return config
     })

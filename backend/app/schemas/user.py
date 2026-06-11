@@ -13,6 +13,9 @@ class UserResponse(BaseModel):
     role:       UserRole
     is_active:  bool
     created_at: datetime
+    name:       str
+    login:      str
+    is_admin:   bool
 
 
 class UserUpdate(BaseModel):

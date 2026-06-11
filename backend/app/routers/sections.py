@@ -51,9 +51,25 @@ def make_section_router(model: Type, url_prefix: str, tag: str) -> APIRouter:
     ):
         await get_project_or_404(project_guid, db, user)
         data = body.model_dump(exclude={"extra"})
-        # применяем extra-поля если переданы
+        # применяем extra-поля если переданы или получены через model_extra
         extra = body.extra or {}
-        item = model(project_guid=project_guid, created_by=user.guid, **data, **extra)
+        if body.model_extra:
+            extra.update(body.model_extra)
+        
+        # Автоматический маппинг для обратной совместимости с фронтендом
+        if "description" in extra:
+            if hasattr(model, "content") and not data.get("content"):
+                data["content"] = extra["description"]
+        if "type" in extra:
+            if hasattr(model, "title") and not data.get("title"):
+                data["title"] = extra["type"]
+            if hasattr(model, "constraint_type"):
+                if extra["type"] in ["technical", "business", "legal", "resource"]:
+                    extra["constraint_type"] = extra["type"]
+        
+        # оставляем только те ключи из extra, которые реально есть в модели
+        valid_extra = {k: v for k, v in extra.items() if hasattr(model, k)}
+        item = model(project_guid=project_guid, created_by=user.guid, **data, **valid_extra)
         db.add(item)
         await db.commit()
         await db.refresh(item)
@@ -87,7 +103,23 @@ def make_section_router(model: Type, url_prefix: str, tag: str) -> APIRouter:
         for k, v in body.model_dump(exclude_none=True, exclude={"extra"}).items():
             if hasattr(item, k):
                 setattr(item, k, v)
-        for k, v in (body.extra or {}).items():
+        
+        extra = body.extra or {}
+        if body.model_extra:
+            extra.update(body.model_extra)
+            
+        # Автоматический маппинг для обратной совместимости с фронтендом
+        if "description" in extra:
+            if hasattr(item, "content"):
+                setattr(item, "content", extra["description"])
+        if "type" in extra:
+            if hasattr(item, "title"):
+                setattr(item, "title", extra["type"])
+            if hasattr(item, "constraint_type"):
+                if extra["type"] in ["technical", "business", "legal", "resource"]:
+                    setattr(item, "constraint_type", extra["type"])
+
+        for k, v in extra.items():
             if hasattr(item, k):
                 setattr(item, k, v)
         await db.commit()

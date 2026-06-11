@@ -82,7 +82,7 @@ async def test_project_lifecycle_and_members(client, db_session):
     # Add user2 to project as a "member"
     add_member_resp = await client.post(
         f"/api/projects/{proj_guid}/users",
-        json={"user_id": str(user2.guid), "role": "contributor"},
+        json={"user_guid": user2.guid, "role": "member"},
         headers=headers1
     )
     assert add_member_resp.status_code == 201

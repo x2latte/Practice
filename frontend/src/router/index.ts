@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
+  routes: routes as any,
 })
 
 router.beforeEach((to, _to) => {

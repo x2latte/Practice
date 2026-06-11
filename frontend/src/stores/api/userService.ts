@@ -5,11 +5,10 @@ import { processError } from '@/stores/api/utils'
 export default {
   async login (formData: LoginType) {
     try {
-      const fd = new FormData()
-      fd.append('username', formData.username)
-      fd.append('password', formData.password)
-      const response = await httpClient.post('users/login', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const response = await httpClient.post('users/login', {
+        username: formData.username,
+        email: formData.username,
+        password: formData.password
       })
       const accessToken = response.data.access_token
       const refreshToken = response.data.refresh_token
@@ -40,7 +39,10 @@ export default {
   async refreshToken (refreshToken: string) {
     try {
       const response = await httpClient.post('users/refresh', { refresh_token: refreshToken })
-      return response.data.access_token
+      return {
+        accessToken: response.data.access_token,
+        refreshToken: response.data.refresh_token,
+      }
     } catch (error) {
       throw processError(error)
     }

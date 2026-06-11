@@ -52,11 +52,11 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     )
     user = result.scalar_one_or_none()
     if not user or not verify_password(body.password, user.hashed_password):
-        raise HTTPException(401, "Неверный email или пароль")
 
     # Delete old refresh tokens for this user
     await db.execute(delete(RefreshToken).where(RefreshToken.user_guid == user.guid))
     await db.flush()
+        raise HTTPException(401, "Неверный email или пароль")
     if not user.is_active:
         raise HTTPException(403, "Аккаунт заблокирован")
 

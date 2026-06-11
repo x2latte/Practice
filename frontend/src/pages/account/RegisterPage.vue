@@ -120,7 +120,7 @@
               <span>Есть учетная запись?</span>
               <RouterLink
                 class="ms-2"
-                to="signup"
+                to="/login"
               >
                 Авторизоваться
               </RouterLink>

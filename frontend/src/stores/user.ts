@@ -78,7 +78,11 @@ export const useUserStore = defineStore('user', {
       if (this.refreshToken === null) {
         throw new Error('Refresh token not found')
       } else {
-        this.accessToken = await userService.refreshToken(this.refreshToken)
+        const { accessToken, refreshToken } = await userService.refreshToken(this.refreshToken)
+        this.accessToken = accessToken
+        if (refreshToken) {
+          this.refreshToken = refreshToken
+        }
         this.refreshingCall = null
       }
     },

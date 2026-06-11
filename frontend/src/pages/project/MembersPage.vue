@@ -63,6 +63,7 @@ onMounted(loadMembers)
         item-value="guid" 
         label="Поиск пользователя" 
         clearable
+        return-object
         @update:search="searchUsers"
       ></v-autocomplete>
     </v-col>

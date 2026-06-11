@@ -2,7 +2,7 @@
 Универсальные схемы для всех разделов ТЗ.
 Каждый специфичный раздел наследует SectionBase.
 """
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 from datetime import datetime
 from typing import Optional, Any, Dict
 
@@ -14,10 +14,12 @@ class SectionBase(BaseModel):
 
 
 class SectionCreate(SectionBase):
+    model_config = ConfigDict(extra='allow')
     extra: Optional[Dict[str, Any]] = None   # доп. поля для специфичных разделов
 
 
 class SectionUpdate(BaseModel):
+    model_config = ConfigDict(extra='allow')
     title:   Optional[str] = None
     content: Optional[str] = None
     order:   Optional[int] = None
@@ -25,13 +27,30 @@ class SectionUpdate(BaseModel):
 
 
 class SectionResponse(SectionBase):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra='allow')
 
     guid:         str
     project_guid: str
     created_by:   Optional[str]
     created_at:   datetime
     updated_at:   Optional[datetime]
+
+    @computed_field
+    def id(self) -> str:
+        return self.guid
+
+    @computed_field
+    def description(self) -> Optional[str]:
+        return self.content
+
+    @computed_field
+    def type(self) -> Optional[str]:
+        # Возвращаем constraint_type или category, если они есть, иначе title
+        if hasattr(self, 'constraint_type') and getattr(self, 'constraint_type'):
+            return str(getattr(self, 'constraint_type'))
+        if hasattr(self, 'category') and getattr(self, 'category'):
+            return str(getattr(self, 'category'))
+        return self.title
 
 
 # ── Специфичные схемы (только доп. поля) ─────────────────────────────

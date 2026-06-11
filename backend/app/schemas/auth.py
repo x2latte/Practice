@@ -1,10 +1,19 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from typing import Any
 
 
 class RegisterRequest(BaseModel):
     email:    EmailStr
     username: str
     password: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_login_to_username(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "username" not in data and "login" in data:
+                data["username"] = data["login"]
+        return data
 
     @field_validator("password")
     @classmethod
@@ -22,7 +31,7 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email:    EmailStr
+    email:    str
     password: str
 
 

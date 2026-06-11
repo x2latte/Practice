@@ -195,17 +195,28 @@ EOF
 ```
 
 
-### Применение миграций
+### Управление миграциями (Alembic)
 
+Для применения существующих миграций к рабочей базе данных:
 ```bash
-alembic upgrade head
+python -m alembic upgrade head
+```
+
+При изменении структуры моделей SQLAlchemy в коде (каталог `app/models/`), вы можете сгенерировать новую автоматическую миграцию:
+```bash
+python -m alembic revision --autogenerate -m "describe_changes"
+```
+
+Если потребуется сделать откат последней примененной миграции:
+```bash
+python -m alembic downgrade -1
 ```
 
 
 ### Запуск сервера
 
 ```bash
-uvicorn src.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 ---
@@ -242,37 +253,70 @@ npm run dev
 
 ---
 
-# Запуск тестов
+# Тестирование системы (Backend & Frontend)
 
-Перейдите в каталог backend:
+В соответствии с требованиями, проект содержит комплексное покрытие тестами как серверной, так и клиентской частей.
 
+---
+
+## 1. Backend-тесты (Pytest)
+
+Тестирование бэкенда реализовано на базе фреймворка `pytest` в асинхронном режиме.
+
+### Доступные наборы тестов:
+- `tests/test_auth.py` — проверка регистрации, авторизации (JWT), обновления токенов, ролей и профилей пользователей.
+- `tests/test_projects.py` — создание, редактирование, удаление проектов, проверка прав доступа к ним.
+- `tests/test_sections.py` — комплексное подмножество тестов разделов ТЗ по методологии (Бизнес-цели, Глоссарий, Аналоги, User Stories и т.д.) по спецификациям курса «Анализ требований».
+
+### Как запустить:
+
+1. Перейдите в каталог `backend` и активируйте виртуальное окружение:
 ```bash
 cd backend
 source venv/bin/activate
 ```
 
-
-### Подготовка тестовой БД
-
+2. Подготовьте тестовую базу данных PostgreSQL:
 ```bash
-DB_URI=postgresql+asyncpg://a1111:@localhost/ras_test alembic upgrade head
+DB_URI=postgresql+asyncpg://a1111:@localhost/ras_test python -m alembic upgrade head
 ```
 
-
-### Запуск всех тестов
-
+3. Запустите все бэкенд-тесты:
 ```bash
 pytest tests/ -v
 ```
 
-
-### Запуск отдельных наборов тестов
-
+4. Запустите конкретный файл с тестами:
 ```bash
-pytest tests/test_projects.py -v
-pytest tests/test_users.py -v
-pytest tests/test_requirements.py -v
-pytest tests/test_toc.py -v
+pytest tests/test_sections.py -v
+```
+
+---
+
+## 2. Frontend-тесты (Vitest)
+
+Тестирование клиентской части реализовано на базе современного легковесного инструмента `vitest` для Vue 3 и Pinia.
+
+### Доступные наборы тестов:
+- `tests/utils.spec.ts` — проверка хелперов, валидаторов форм, обработки ошибок взаимодействия с API.
+- `tests/userStore.spec.ts` — проверка работы хранилища авторизации Pinia (вход, получение профиля, обработка сетевых ошибок).
+- `tests/projectsStore.spec.ts` — проверка хранилища проектов (запросы, создание элементов, обновление требований, интеграция с REST-клиентом).
+
+### Как запустить:
+
+1. Перейдите в каталог `frontend`:
+```bash
+cd frontend
+```
+
+2. Запустите тесты в интерактивном режиме (Watch mode):
+```bash
+npm run test
+```
+
+3. Запустите тесты в режиме однократного выполнения (CI/CD / Run once):
+```bash
+npx vitest run
 ```
 
 ---
